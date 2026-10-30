@@ -9,15 +9,19 @@ load_dotenv()
 app = Flask(__name__)
 
 
+
 # ---------------- DATABASE CONNECTION ----------------
 
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        database=os.getenv("DB_NAME", "ai_code_explainer")
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT", "25671")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME", "defaultdb"),
+        ssl_disabled=False
     )
+
 
 
 # ---------------- SAVE ANALYSIS ----------------
