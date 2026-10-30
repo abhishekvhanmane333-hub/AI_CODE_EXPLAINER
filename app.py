@@ -22,6 +22,7 @@ def get_db_connection():
 
 # ---------------- SAVE ANALYSIS ----------------
 
+
 def save_analysis(code, action, result):
     connection = None
     cursor = None
@@ -40,6 +41,11 @@ def save_analysis(code, action, result):
         )
 
         connection.commit()
+        return True
+
+    except Exception:
+        app.logger.exception("Could not save analysis to MySQL")
+        return False
 
     finally:
         if cursor is not None:
@@ -47,6 +53,7 @@ def save_analysis(code, action, result):
 
         if connection is not None and connection.is_connected():
             connection.close()
+
 
 
 # ---------------- GROQ AI ----------------
@@ -169,9 +176,11 @@ def history():
 
         return jsonify(records)
 
-    except Exception:
-        app.logger.exception("Failed to load history")
-        return jsonify({"error": "Could not load analysis history."}), 500
+
+except Exception:
+    app.logger.exception("Failed to load history")
+    return jsonify([])
+
 
     finally:
         if cursor is not None:
@@ -272,8 +281,15 @@ def analyze():
                 )
             }), 400
 
-        result = get_ai_result(code, action)
-        save_analysis(code, action, result)
+      
+result = get_ai_result(code, action)
+saved = save_analysis(code, action, result)
+
+return jsonify({
+    "result": result,
+    "action": action,
+    "saved": saved
+})
 
         return jsonify({
             "result": result,
