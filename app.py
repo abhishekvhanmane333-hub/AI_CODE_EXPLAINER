@@ -22,7 +22,6 @@ def get_db_connection():
 
 # ---------------- SAVE ANALYSIS ----------------
 
-
 def save_analysis(code, action, result):
     connection = None
     cursor = None
@@ -51,9 +50,11 @@ def save_analysis(code, action, result):
         if cursor is not None:
             cursor.close()
 
-        if connection is not None and connection.is_connected():
-            connection.close()
-
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                app.logger.exception("Could not close MySQL connection")
 
 
 # ---------------- GROQ AI ----------------
@@ -62,7 +63,9 @@ def get_ai_result(code, action):
     api_key = os.getenv("GROQ_API_KEY")
 
     if not api_key:
-        raise ValueError("GROQ_API_KEY .env file मध्ये सेट केलेली नाही.")
+        raise ValueError(
+            "GROQ_API_KEY is missing from the environment variables."
+        )
 
     prompts = {
         "explain": """
@@ -118,7 +121,12 @@ and explain the changes.
         temperature=0.2
     )
 
-    return response.choices[0].message.content
+    result = response.choices[0].message.content
+
+    if not result:
+        raise RuntimeError("The AI returned an empty response.")
+
+    return result
 
 
 # ---------------- HOME PAGE ----------------
@@ -176,18 +184,19 @@ def history():
 
         return jsonify(records)
 
-
-except Exception:
-    app.logger.exception("Failed to load history")
-    return jsonify([])
-
+    except Exception:
+        app.logger.exception("Failed to load history")
+        return jsonify([])
 
     finally:
         if cursor is not None:
             cursor.close()
 
-        if connection is not None and connection.is_connected():
-            connection.close()
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                app.logger.exception("Could not close history connection")
 
 
 # ---------------- DELETE HISTORY RECORD ----------------
@@ -208,6 +217,7 @@ def delete_history(record_id):
 
         if cursor.rowcount == 0:
             connection.rollback()
+
             return jsonify({
                 "error": "Record not found."
             }), 404
@@ -220,8 +230,11 @@ def delete_history(record_id):
         })
 
     except Exception:
-        if connection is not None and connection.is_connected():
-            connection.rollback()
+        if connection is not None:
+            try:
+                connection.rollback()
+            except Exception:
+                app.logger.exception("Could not roll back deletion")
 
         app.logger.exception("Failed to delete history record")
 
@@ -233,8 +246,11 @@ def delete_history(record_id):
         if cursor is not None:
             cursor.close()
 
-        if connection is not None and connection.is_connected():
-            connection.close()
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                app.logger.exception("Could not close deletion connection")
 
 
 # ---------------- ANALYZE CODE ----------------
@@ -256,59 +272,58 @@ def analyze():
             "error": "Invalid action selected."
         }), 400
 
+    # Check Python syntax
     try:
-        try:
-            ast.parse(code)
+        ast.parse(code)
 
-        except SyntaxError as error:
-            if action == "errors":
-                result = (
-                    f"Syntax error on line {error.lineno}: {error.msg}"
-                )
+    except SyntaxError as error:
+        if action == "errors":
+            result = (
+                f"Syntax error on line {error.lineno}: {error.msg}"
+            )
 
-                save_analysis(code, action, result)
-
-                return jsonify({
-                    "result": result,
-                    "action": action,
-                    "saved": True
-                })
+            saved = save_analysis(code, action, result)
 
             return jsonify({
-                "error": (
-                    f"Syntax error on line {error.lineno}: "
-                    f"{error.msg}. Select Detect Errors to review it."
-                )
-            }), 400
-
-      
-result = get_ai_result(code, action)
-saved = save_analysis(code, action, result)
-
-return jsonify({
-    "result": result,
-    "action": action,
-    "saved": saved
-})
-
-        return jsonify({
-            "result": result,
-            "action": action,
-            "saved": True
-        })
-
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    except Exception:
-        app.logger.exception("Analysis failed")
+                "result": result,
+                "action": action,
+                "saved": saved
+            })
 
         return jsonify({
             "error": (
-                "Analysis failed. Check the Groq API key, "
-                "MySQL connection, and model availability."
+                f"Syntax error on line {error.lineno}: "
+                f"{error.msg}. Select Detect Errors to review it."
+            )
+        }), 400
+
+    # Get AI result independently of the database
+    try:
+        result = get_ai_result(code, action)
+
+    except ValueError as error:
+        return jsonify({
+            "error": str(error)
+        }), 400
+
+    except Exception:
+        app.logger.exception("Groq AI request failed")
+
+        return jsonify({
+            "error": (
+                "AI analysis failed. Check the Groq API key, "
+                "model availability, API limits, and Render logs."
             )
         }), 500
+
+    # Saving history is optional; it must not block the AI result
+    saved = save_analysis(code, action, result)
+
+    return jsonify({
+        "result": result,
+        "action": action,
+        "saved": saved
+    })
 
 
 if __name__ == "__main__":
