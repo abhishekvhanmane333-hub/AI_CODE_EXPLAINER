@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Code Explainer</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+
+<body>
+    <main class="container">
+
+        <header class="site-header">
+            <div class="logo">⚡</div>
+            <h1>AI Code <span>Explainer</span></h1>
+            <p class="subtitle">
+                Understand, debug, and improve Python code with AI.
+            </p>
+            <div class="header-badge">PYTHON • AI • LEARNING</div>
+        </header>
+
+        <!-- Python Editor -->
+        <section class="card">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">CODE WORKSPACE</span>
+                    <h2>💻 Python Code Editor</h2>
+                </div>
+                <span class="live-badge">● Ready</span>
+            </div>
+
+            <label for="codeInput">Enter your Python code</label>
+
+            <textarea
+                id="codeInput"
+                placeholder="def greet(name):
+    print(f'Hello, {name}!')
+
+greet('Abhishek')"
+                spellcheck="false"
+            ></textarea>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" id="explainBtn">
+                    🧠 Explain Code
+                </button>
+
+                <button type="button" class="btn btn-danger" id="errorsBtn">
+                    🔍 Detect Errors
+                </button>
+
+                <button type="button" class="btn btn-success" id="improveBtn">
+                    ✨ Improve Code
+                </button>
+
+                <button type="button" class="btn btn-secondary" id="clearBtn">
+                    Clear Code
+                </button>
+            </div>
+
+            <p class="status" id="statusMessage">
+                Ready to analyze your code.
+            </p>
+        </section>
+
+        <!-- AI Result -->
+        <section class="card">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">AI OUTPUT</span>
+                    <h2>🤖 Analysis Result</h2>
+                </div>
+            </div>
+
+            <div id="resultOutput" class="result-box" aria-live="polite"></div>
+
+            <button type="button" class="btn btn-secondary" id="downloadBtn">
+                📥 Download Result (.txt)
+            </button>
+
+            <p class="status" id="downloadStatus"></p>
+        </section>
+
+        <!-- History -->
+        <section class="card">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">SAVED RECORDS</span>
+                    <h2>📜 Analysis History</h2>
+                </div>
+                <span class="history-count" id="historyCount">0 records</span>
+            </div>
+
+            <p class="section-description">
+                Search, review, and manage your previous code analyses.
+            </p>
+
+            <div class="search-row">
+                <input
+                    type="search"
+                    id="historySearch"
+                    placeholder="Search code, result, or analysis type..."
+                    aria-label="Search analysis history"
+                >
+
+                <button type="button" class="btn btn-primary" id="searchBtn">
+                    🔍 Search
+                </button>
+
+                <button type="button" class="btn btn-secondary" id="historyBtn">
+                    ↻ Show All
+                </button>
+            </div>
+
+            <p class="status" id="historyStatus">
+                Click Show All to load your saved analyses.
+            </p>
+
+            <div id="historyOutput" class="history-list"></div>
+        </section>
+
+        <footer>
+            <p>⚡ AI Code Explainer</p>
+            <span>Built for Python learners</span>
+        </footer>
+
+    </main>
+</body>
+</html>
+```
